@@ -6,23 +6,23 @@
  * Different visual presentations ("skins") for the local display.
  * Each skin complements the telemetry data differently:
  * 
- * - DIGITAL : Modern, precise, information-dense (default)
- * - ANALOG  : Classic gauge / speedo feel
- * - MINIMAL : Big speed + critical status only (great for bright sun)
- * - RACE    : High-contrast, performance focused, warnings prominent
+ * - SKIN_DIGITAL : Modern, precise, information-dense (default)
+ * - SKIN_ANALOG  : Classic gauge / speedo feel
+ * - SKIN_MINIMAL : Big speed + critical status only (great for bright sun)
+ * - SKIN_RACE    : High-contrast, performance focused, warnings prominent
  * 
  * When you add a real display + LVGL, implement the lv_... calls inside
  * each render function. The rest of the firmware stays the same.
  */
 
 #include <Arduino.h>
-#include "telemetry.h"   // forward declaration of our Telemetry struct
+#include "../telemetry.h"   // Telemetry struct from parent src/ dir
 
 enum class UiSkin : uint8_t {
-  DIGITAL = 0,
-  ANALOG,
-  MINIMAL,
-  RACE,
+  SKIN_DIGITAL = 0,
+  SKIN_ANALOG,
+  SKIN_MINIMAL,
+  SKIN_RACE,
   COUNT
 };
 
@@ -111,10 +111,10 @@ inline void renderRaceSkin(const Telemetry& t, bool forceRedraw = false) {
 // Master dispatcher
 inline void renderSkin(UiSkin skin, const Telemetry& t, bool force = false) {
   switch (skin) {
-    case UiSkin::DIGITAL: renderDigitalSkin(t, force); break;
-    case UiSkin::ANALOG:  renderAnalogSkin(t, force);  break;
-    case UiSkin::MINIMAL: renderMinimalSkin(t, force); break;
-    case UiSkin::RACE:    renderRaceSkin(t, force);    break;
-    default:              renderDigitalSkin(t, force); break;
+    case UiSkin::SKIN_DIGITAL: renderDigitalSkin(t, force); break;
+    case UiSkin::SKIN_ANALOG:  renderAnalogSkin(t, force);  break;
+    case UiSkin::SKIN_MINIMAL: renderMinimalSkin(t, force); break;
+    case UiSkin::SKIN_RACE:    renderRaceSkin(t, force);    break;
+    default:                   renderDigitalSkin(t, force); break;
   }
 }

@@ -27,7 +27,7 @@ jobs:
         working-directory: firmware
         run: pio run -e ${{ matrix.env }}
 
-      - name: Rename artifact
+      - name: Prepare artifacts
         run: |
           mkdir -p release-artifacts
           cp firmware/.pio/build/${{ matrix.env }}/firmware.bin release-artifacts/MiniBikeStats-${{ matrix.env }}.bin || true
@@ -36,7 +36,7 @@ jobs:
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
         with:
-          name: firmware-${{ matrix.env }}
+          name: MiniBikeStats-firmware-${{ matrix.env }}
           path: release-artifacts/
 
   build-mobile:
@@ -44,10 +44,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.0'
+          flutter-version: '3.24.0'
           channel: 'stable'
           cache: true
 

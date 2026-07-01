@@ -50,7 +50,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: firmware-${{ matrix.env }}
+          name: MiniBikeStats-firmware-${{ matrix.env }}
           path: |
             firmware/.pio/build/${{ matrix.env }}/*.bin
             firmware/.pio/build/${{ matrix.env }}/*.elf

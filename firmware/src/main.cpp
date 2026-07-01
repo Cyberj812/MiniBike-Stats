@@ -14,6 +14,7 @@
 #include <Arduino.h>
 #include <VescUart.h>
 #include <NimBLEDevice.h>
+#include <string>  // for std::string in callbacks
 
 #include "telemetry.h"
 #include "ui/skins.h"
@@ -37,7 +38,7 @@ VescUart vesc;
 Telemetry telem;
 
 // === UI Skin State ===
-UiSkin currentSkin = UiSkin::DIGITAL;
+UiSkin currentSkin = UiSkin::SKIN_DIGITAL;
 uint32_t lastSkinSwitch = 0;
 
 // === BLE ===
@@ -106,8 +107,8 @@ class ServerCallbacks : public NimBLEServerCallbacks {
     deviceConnected = true;
     Serial.println("BLE client connected");
 
-    // Try to use a larger MTU for faster/more efficient telemetry packets
-    pServer->updatePeerMTU(desc->conn_handle, 185);
+    // MTU is set globally in setup() for better telemetry packet size.
+    // NimBLE handles negotiation automatically in most cases.
   }
   void onDisconnect(NimBLEServer* pServer, ble_gap_conn_desc* desc) override {
     deviceConnected = false;

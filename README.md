@@ -114,6 +114,19 @@ BMS values (when available via CAN): total voltage, SOC, individual cell voltage
 
 See `mobile/README.md` for running instructions and `docs/protocol.md` for the BLE protocol.
 
+## Pre-built Test Artifacts
+
+The GitHub workflows automatically build the firmware and mobile app:
+
+- Go to the **Actions** tab → latest successful run for `firmware-ci` or `flutter-ci`
+- Download the artifacts:
+  - `MiniBikeStats-firmware-esp32-s3` / `MiniBikeStats-firmware-esp32-c3` → .bin + .elf ready to flash
+  - `MiniBikeStats-Android-debug` → APK for sideloading/testing on Android
+
+For official releases, use the **Releases** page (triggered by `v*` tags).
+
+This gives you working ESP32 firmware + Android app to test immediately without local build.
+
 **Other**
 - Protocol: Simple binary struct (versioned) over BLE notify for efficiency, or JSON for quick prototyping.
 - Config: Stored in ESP32 non-volatile + syncable from app.
@@ -127,11 +140,17 @@ MiniBike-Stats/
 │   ├── platformio.ini
 │   └── src/
 │       └── main.cpp
-├── mobile/                 # Flutter app
-│   └── (create with `flutter create minibike_dash`)
+├── mobile/                 # Flutter app (real-time BLE dashboard)
+│   ├── lib/
+│   │   ├── main.dart
+│   │   ├── models/
+│   │   └── services/
+│   └── pubspec.yaml
 ├── hardware/               # Schematics, pinouts, BOM, 3D models, enclosure
 ├── docs/
-│   ├── protocol.md         # BLE service/characteristics + packet formats
+│   ├── protocol.md                 # BLE protocol & packet definition
+│   ├── stat-configuration-guide.md # Detailed calibration for all stats
+│   ├── ui-skins.md                 # Display skin descriptions
 │   ├── wiring.md
 │   ├── display-setup.md
 │   └── configuration.md
