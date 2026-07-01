@@ -64,6 +64,14 @@ flowchart TD
 - Buttons or rotary encoder for local UI navigation
 - Optional: GPS (for true speed / maps), IMU, SD card, buzzer
 
+## UI Skins
+
+MiniBike Stats ships with multiple visual skins on both the local screen and mobile app. Skins change layout, emphasis, and color treatment while showing the same underlying telemetry.
+
+See [docs/ui-skins.md](docs/ui-skins.md) for descriptions of Digital / Analog / Minimal / Race skins.
+
+The bike display and phone can use matching or independent skins.
+
 ## Core Telemetry Fields (VESC)
 
 Primary data from VESC `get_values()` / status packets:
@@ -155,7 +163,12 @@ MiniBike-Stats/
    - Ride logging + history
    - OTA updates for firmware
 
-See `docs/` (to be populated) and examples in `firmware/examples/`.
+See `docs/` especially:
+- [docs/stat-configuration-guide.md](docs/stat-configuration-guide.md) — very detailed calibration and readout explanations
+- [docs/ui-skins.md](docs/ui-skins.md) — skin descriptions
+- [docs/configuration.md](docs/configuration.md) — quick reference
+
+And examples in `firmware/examples/`.
 
 ## Roadmap Ideas
 

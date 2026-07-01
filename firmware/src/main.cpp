@@ -1,17 +1,22 @@
 /**
- * minibike-esp32-dash - Main firmware skeleton
+ * MiniBike Stats - Main firmware
  *
  * Goals:
  *  - Read telemetry from VESC (UART or CAN)
- *  - Drive local display (LVGL or simple)
+ *  - Drive local display using swappable skins (see ui/skins.h)
  *  - Advertise BLE service and stream telemetry
  *  - Handle buttons, compute derived values (speed, trip, SOC)
  *  - Persist odo/trip/config
+ *
+ * See docs/stat-configuration-guide.md for proper configuration of all stats.
  */
 
 #include <Arduino.h>
 #include <VescUart.h>
 #include <NimBLEDevice.h>
+
+#include "telemetry.h"
+#include "ui/skins.h"
 
 // === CONFIG - move to header or NVS later ===
 #define WHEEL_DIAMETER_MM   400.0f   // adjust for your tire
@@ -28,28 +33,12 @@ HardwareSerial vescSerial(1);   // UART1 or 2 depending on board
 
 VescUart vesc;
 
-// === Telemetry cache (what we send over BLE + show on screen) ===
-struct Telemetry {
-  float v_in = 0;
-  float i_in = 0;
-  float i_motor = 0;
-  float duty = 0;
-  float rpm = 0;
-  float temp_mos = 0;
-  float temp_motor = 0;
-  uint8_t fault = 0;
-
-  float speed_kmh = 0;
-  float power_w = 0;
-  float soc = 0;
-  float trip_km = 0;       // resettable
-  float odo_km = 0;        // persistent
-  float efficiency = 0;
-
-  uint32_t last_update = 0;
-};
-
+// Telemetry data (defined in telemetry.h)
 Telemetry telem;
+
+// === UI Skin State ===
+UiSkin currentSkin = UiSkin::DIGITAL;
+uint32_t lastSkinSwitch = 0;
 
 // === BLE ===
 NimBLEServer* pServer = nullptr;
@@ -120,23 +109,44 @@ class ServerCallbacks : public NimBLEServerCallbacks {
 class CommandCallbacks : public NimBLECharacteristicCallbacks {
   void onWrite(NimBLECharacteristic* pCharacteristic, ble_gap_conn_desc* desc) override {
     std::string value = pCharacteristic->getValue();
-    if (value.length() > 0) {
-      uint8_t cmd = value[0];
-      Serial.printf("Received command: 0x%02X\n", cmd);
-      // TODO: handle RESET_TRIP, SET_MODE, LIGHTS, etc.
+    if (value.length() == 0) return;
+
+    uint8_t cmd = value[0];
+    Serial.printf("Received command: 0x%02X\n", cmd);
+
+    switch (cmd) {
+      case 0x01: // CYCLE_SKIN
+        {
+          uint8_t next = ((uint8_t)currentSkin + 1) % (uint8_t)UiSkin::COUNT;
+          currentSkin = (UiSkin)next;
+          lastSkinSwitch = millis();
+          Serial.printf("[CMD] Skin -> %s\n", getSkinName(currentSkin));
+          renderSkin(currentSkin, telem, true);
+        }
+        break;
+      case 0x02: // RESET_TRIP
+        telem.trip_km = 0;
+        Serial.println("[CMD] Trip reset");
+        break;
+      // TODO: 0x03 = SET_POWER_MODE, 0x04 = LIGHTS, etc.
+      default:
+        Serial.println("[CMD] Unknown command");
+        break;
     }
   }
 };
 
 // === Derived calculations ===
-float calculateSpeedKmh(float erpm) {
-  // erpm = electrical rpm
-  float motor_rpm = erpm / (MOTOR_POLE_PAIRS * 2.0f);  // careful: some libs give erpm already
-  // Many VESC libs return "rpm" as eRPM. Verify with your setup.
-  float wheel_rpm = motor_rpm / GEAR_RATIO;
-  float circumference_m = (WHEEL_DIAMETER_MM / 1000.0f) * PI;
-  float speed_ms = wheel_rpm * circumference_m / 60.0f;
-  return speed_ms * 3.6f;
+// IMPORTANT: See docs/stat-configuration-guide.md for full explanation + calibration
+float calculateSpeedKmh(float vescRpm) {
+  // VescUart typically returns electrical RPM (eRPM)
+  // motor mechanical RPM = eRPM / (pole_pairs * 2)  in many cases.
+  // Test and adjust! Some setups treat vescRpm directly.
+  float motorRpm = vescRpm / (MOTOR_POLE_PAIRS * 2.0f);
+  float wheelRpm = motorRpm / GEAR_RATIO;
+  float circumferenceM = (WHEEL_DIAMETER_MM / 1000.0f) * PI;
+  float speedMs = wheelRpm * circumferenceM / 60.0f;
+  return speedMs * 3.6f;
 }
 
 float calculateSoc(float voltage) {
@@ -168,27 +178,26 @@ void updateTelemetryFromVesc() {
   }
 }
 
-// === Display stub (replace with real LVGL / TFT code) ===
+// === Display / Skin dispatcher ===
+// Currently renders to Serial using different "skins".
+// When adding LVGL + real display, implement the actual drawing inside skins.h
 void updateLocalDisplay() {
-  // For now just serial print the important stuff
-  static uint32_t lastPrint = 0;
-  if (millis() - lastPrint > 500) {
-    Serial.printf("V: %.1fV  I: %.1fA  Speed: %.1f km/h  SOC: %.0f%%  Tmos: %.1f°C\n",
-                  telem.v_in, telem.i_in, telem.speed_kmh, telem.soc, telem.temp_mos);
-    lastPrint = millis();
+  // Switch skin on a long button press simulation (every 8 seconds for demo)
+  if (millis() - lastSkinSwitch > 8000) {
+    uint8_t next = ((uint8_t)currentSkin + 1) % (uint8_t)UiSkin::COUNT;
+    currentSkin = (UiSkin)next;
+    lastSkinSwitch = millis();
+    Serial.printf("[SKIN] Switched to: %s\n", getSkinName(currentSkin));
   }
 
-  // === TODO ===
-  // lv_label_set_text_fmt(speed_label, "%.0f", telem.speed_kmh);
-  // lv_arc_set_value(speed_arc, (int)telem.speed_kmh);
-  // update battery bar, temp bars, etc.
+  renderSkin(currentSkin, telem);
 }
 
 // === Setup ===
 void setup() {
   Serial.begin(115200);
   delay(200);
-  Serial.println("\n=== minibike-esp32-dash starting ===");
+  Serial.println("\n=== MiniBike Stats starting ===");
 
   // VESC UART
   vescSerial.begin(115200, SERIAL_8N1, VESC_RX_PIN, VESC_TX_PIN);
@@ -196,7 +205,7 @@ void setup() {
   // vesc.setDebugPort(&Serial); // noisy
 
   // === BLE Init ===
-  NimBLEDevice::init("MinibikeDash");
+  NimBLEDevice::init("MiniBikeStats");
   NimBLEDevice::setMTU(185);
 
   pServer = NimBLEDevice::createServer();
@@ -222,11 +231,13 @@ void setup() {
   pAdvertising->setScanResponse(true);
   pAdvertising->start();
 
-  Serial.println("BLE advertising started: MinibikeDash");
+  Serial.println("BLE advertising started: MiniBikeStats");
 
-  // TODO: init display + LVGL here
-  // TODO: load persisted odo/trip/config from Preferences / LittleFS
+  // TODO: init display + LVGL here (see ui/skins.h)
+  // TODO: load persisted odo/trip/config + currentSkin from Preferences
+  // TODO: register button input to cycle skins (long press, double click, etc.)
 
+  Serial.printf("Active skin: %s\n", getSkinName(currentSkin));
   Serial.println("Setup complete.");
 }
 

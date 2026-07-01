@@ -71,3 +71,7 @@ Common implementation:
 ## Next
 
 Add a `Config` struct + load/save functions, then wire it into the BLE config characteristic and the Flutter settings screen.
+
+**For the full story** (formulas, calibration steps, verification, common mistakes, example configs) read the much more detailed guide:
+
+→ **[docs/stat-configuration-guide.md](stat-configuration-guide.md)**

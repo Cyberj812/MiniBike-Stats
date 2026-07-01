@@ -2,6 +2,25 @@
 
 This is the companion phone application for the minibike ESP32 dashboard.
 
+## UI Skins
+
+The app supports multiple visual skins that complement the telemetry and match the on-bike display skins:
+
+| Skin     | Philosophy                              | Best For                  |
+|----------|-----------------------------------------|---------------------------|
+| Digital  | Clean, balanced, lots of info           | Everyday riding           |
+| Analog   | Classic gauges and speedo arcs          | Retro / motorcycle feel   |
+| Minimal  | Huge speed + almost nothing else        | Bright sunlight           |
+| Race     | Aggressive colors, warning emphasis     | Performance / track use   |
+
+See `lib/themes/skins.dart` for the enum and color ideas.
+
+Skins affect:
+- Gauge style (arc vs bars vs big number)
+- Color temperature mapping (green → red)
+- Chart styling
+- Overall contrast and typography
+
 ## Planned Features (inspired by VESC Dash + more)
 
 - Beautiful realtime dashboard (big speed, battery, power, temps)
@@ -10,6 +29,7 @@ This is the companion phone application for the minibike ESP32 dashboard.
 - Ride recording + history (local database)
 - Export (CSV, GPX)
 - Controls: power mode, lights, cruise request, trip reset
+- Skin picker that can also command the bike display to switch
 - Settings & calibration: wheel size, battery params, units, connection
 - Optional: maps (if GPS on bike or phone), weather, etc.
 

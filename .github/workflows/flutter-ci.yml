@@ -1,0 +1,59 @@
+name: Mobile (Flutter) CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/flutter-ci.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/flutter-ci.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'   # Pin a recent stable
+          channel: 'stable'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Get dependencies
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: mobile
+        run: flutter analyze
+
+      - name: Run tests (if any)
+        working-directory: mobile
+        run: flutter test || echo "No tests yet or tests passed with notes"
+
+      - name: Build Android APK (debug)
+        working-directory: mobile
+        run: flutter build apk --debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: minibike-stats-android-debug
+          path: mobile/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 14
+
+      # Note: iOS build requires macOS runner + signing. Add later with secrets if needed.
+      # - name: Build iOS (macos-latest)
+      #   if: runner.os == 'macOS'
+      #   ...

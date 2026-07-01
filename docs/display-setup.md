@@ -38,7 +38,9 @@ Search for "LVGL <your board>" — there are usually ready PlatformIO / Arduino 
 - Auto-brightness with LDR (light dependent resistor) is nice
 - Provide manual brightness control in both local buttons and mobile app
 
-## UI Pages (suggested)
+## UI Pages (suggested) + Skins
+
+Skins change the visual treatment of these pages. See `docs/ui-skins.md` for details (Digital, Analog, Minimal, Race).
 
 1. **Main Ride**
    - Large speed (analog arc + digital)
