@@ -1,0 +1,37 @@
+# PlatformIO
+.pio/
+.vscode/
+*.log
+
+# Flutter
+mobile/build/
+mobile/.dart_tool/
+mobile/.packages
+mobile/.pub-cache/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+*.iml
+
+# General
+.DS_Store
+*.swp
+*.swo
+*.bak
+.env
+secrets.h
+
+# Build artifacts
+*.bin
+*.elf
+*.map
+firmware/.pioenvs/
+firmware/.piolibdeps/
+
+# IDE
+.idea/
+*.code-workspace
+
+# Logs
+logs/
+*.log
+npm-debug.log*
