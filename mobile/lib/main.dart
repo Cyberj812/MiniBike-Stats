@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'models/telemetry_packet.dart';
-import 'services/minibike_ble.dart';
-import 'themes/skins.dart';
+import 'package:minibike_stats/models/telemetry_packet.dart';
+import 'package:minibike_stats/services/minibike_ble.dart';
+import 'package:minibike_stats/themes/skins.dart';
 
 void main() {
   runApp(
