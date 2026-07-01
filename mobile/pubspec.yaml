@@ -1,0 +1,33 @@
+name: minibike_stats
+description: "Mobile companion app for MiniBike Stats - real-time telemetry from ESP32 + VESC over BLE."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # BLE communication - best maintained option for real-time
+  flutter_blue_plus: ^1.32.12
+
+  # Optional but nice for future graphs
+  fl_chart: ^0.68.0
+
+  # Simple state management
+  provider: ^6.1.2
+
+  # For saving connection preferences etc.
+  shared_preferences: ^2.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Add assets here later if needed (icons, etc.)

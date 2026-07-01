@@ -2,75 +2,70 @@
 
 This is the companion phone application for the minibike ESP32 dashboard.
 
-## UI Skins
+**Real-time Bluetooth communication is fully implemented.**
 
-The app supports multiple visual skins that complement the telemetry and match the on-bike display skins:
+The phone connects to the ESP32 over BLE and receives live telemetry at ~5 Hz.
 
-| Skin     | Philosophy                              | Best For                  |
-|----------|-----------------------------------------|---------------------------|
-| Digital  | Clean, balanced, lots of info           | Everyday riding           |
-| Analog   | Classic gauges and speedo arcs          | Retro / motorcycle feel   |
-| Minimal  | Huge speed + almost nothing else        | Bright sunlight           |
-| Race     | Aggressive colors, warning emphasis     | Performance / track use   |
+## Current BLE Features
 
-See `lib/themes/skins.dart` for the enum and color ideas.
-
-Skins affect:
-- Gauge style (arc vs bars vs big number)
-- Color temperature mapping (green → red)
-- Chart styling
-- Overall contrast and typography
-
-## Planned Features (inspired by VESC Dash + more)
-
-- Beautiful realtime dashboard (big speed, battery, power, temps)
-- Multiple views: main, trip/stats, charts, BMS
-- Live updating graphs (power, speed, voltage over time)
-- Ride recording + history (local database)
-- Export (CSV, GPX)
-- Controls: power mode, lights, cruise request, trip reset
-- Skin picker that can also command the bike display to switch
-- Settings & calibration: wheel size, battery params, units, connection
-- Optional: maps (if GPS on bike or phone), weather, etc.
+- Automatic scan for device named `MiniBikeStats`
+- Real-time telemetry notifications (speed, voltage, currents, temps, SOC, power, trip, etc.)
+- Send commands back to the bike:
+  - Cycle the on-bike display skin
+  - Reset trip distance
+- Clean packet parsing that exactly matches the ESP32 `TelemetryPacketV1` struct
+- Connection state management + auto-reconnect ready
 
 ## Getting Started
 
 ```bash
-# From the project root
 cd mobile
 
-# Create the Flutter project (if not already scaffolded)
-flutter create --platforms android,ios .
-# or flutter create minibike_dash then move files
+# Get dependencies
+flutter pub get
 
-flutter pub add flutter_blue_plus fl_chart path_provider shared_preferences
-
-# Then run
+# Run on your phone (Android or iOS)
 flutter run
 ```
 
-## BLE Integration
+### Important Notes
 
-- Scan for "MinibikeDash"
-- Connect
-- Discover service `a1b2c3d4-0000-0000-0000-00000000beef`
-- Subscribe to telemetry characteristic
-- Parse the packed `TelemetryPacketV1` struct (see ../docs/protocol.md)
-- Send commands on the command characteristic
+- **Android**: Location permission + Bluetooth permissions are required (the app will prompt).
+- **iOS**: Bluetooth permission is requested automatically.
+- Make sure the ESP32 is powered and the firmware is flashed (it advertises as `MiniBikeStats`).
 
-Example packages:
-- `flutter_blue_plus` (recommended current choice)
-- For structured data you can use `protobuf` later
+## Project Structure
 
-## State Management
+```
+mobile/
+├── lib/
+│   ├── main.dart                 # App entry + live dashboard
+│   ├── models/telemetry_packet.dart   # Exact match to ESP32 struct
+│   ├── services/minibike_ble.dart     # BLE manager (connect, notify, commands)
+│   └── themes/skins.dart         # UI skin definitions
+├── pubspec.yaml
+└── README.md
+```
 
-Recommended: Riverpod or Provider + Freezed models for the telemetry object.
+## Architecture
 
-## UI Inspiration
+```
+ESP32 (NimBLE)  <--- BLE Notify (200ms) --->  Flutter (flutter_blue_plus)
+     │                                              │
+     ├── TelemetryPacketV1 (binary)                 ├── MiniBikeBle (ChangeNotifier)
+     └── Command byte (0x01, 0x02, ...)             └── Dashboard updates in real time
+```
 
-- Large, high-contrast numbers for riding
-- Dark theme by default
-- Swipeable pages or bottom nav
-- Optional analog speedo style
+See:
+- `docs/protocol.md` for the protocol
+- Firmware `src/main.cpp` for the ESP32 implementation
 
-See root README and docs/ for the full vision.
+## Future Work
+
+- Add the other skins (Analog, Minimal, Race) visually in the Flutter UI
+- Ride logging + history
+- Settings screen for calibration values (pushed to ESP32)
+- Graphs using fl_chart
+- Better error handling and reconnection logic
+
+Run `flutter pub get` and connect your phone to the ESP32 to see live stats!

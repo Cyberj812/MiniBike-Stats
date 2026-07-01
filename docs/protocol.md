@@ -25,66 +25,53 @@ This document defines the Bluetooth Low Energy interface between the ESP32 dashb
 
 Use 128-bit UUIDs in practice for production to avoid collisions.
 
-## Telemetry Packet (v1)
+## Telemetry Packet (v1) - Currently Implemented
 
-Sent as a compact binary struct (little-endian). Notify payload ≤ 20-180 bytes typical (MTU dependent).
-
-Proposed packed struct (C):
+The firmware currently sends this exact struct over the telemetry characteristic (little-endian).
 
 ```c
-typedef struct __attribute__((packed)) {
-    uint8_t  version;           // 1
-    uint32_t timestamp_ms;      // uptime or millis
+// firmware/src/main.cpp
+struct __attribute__((packed)) TelemetryPacketV1 {
+  uint8_t  version = 1;
+  uint32_t ts_ms;
 
-    // Core VESC
-    float    v_in;              // V
-    float    i_in;              // A (battery)
-    float    i_motor;           // A
-    float    duty;              // 0.0 - 1.0
-    float    rpm;               // eRPM
-    float    temp_mos;          // °C
-    float    temp_motor;        // °C
-    uint8_t  fault;             // mc_fault_code
+  float    v_in;
+  float    i_in;
+  float    i_motor;
+  float    duty;
+  float    rpm;            // eRPM
+  float    temp_mos;
+  float    temp_motor;
+  uint8_t  fault;
 
-    // Energy & distance
-    float    ah_used;           // cumulative or trip?
-    float    wh_used;
-    int32_t  tachometer;        // current
-    int32_t  tachometer_abs;    // lifetime
+  float    speed_kmh;
+  float    power_w;
+  float    soc;
+  float    trip_km;
 
-    // Derived (pre-computed on ESP where possible)
-    float    speed_kmh;         // or mph flag in config
-    float    power_w;           // v_in * i_in or motor power
-    float    soc_pct;           // 0-100 (voltage or BMS)
-    float    trip_km;           // resettable
-    float    efficiency_whkm;   // last segment or avg
-
-    // Status flags
-    uint8_t  power_mode;        // 0=eco, 1=normal, 2=sport, ...
-    uint8_t  lights;            // bitmask
-    uint8_t  cruise;            // 0/1
-    uint8_t  charging;          // 0/1
-} telemetry_v1_t;
+  uint8_t  power_mode;
+  uint8_t  lights;
+  uint8_t  cruise;
+};
 ```
+
+Dart parser in `mobile/lib/models/telemetry_packet.dart` matches this byte-for-byte.
 
 **Notes**:
 - All floats are IEEE 754 single precision.
 - Version byte at front allows future evolution without breaking clients.
 - App can ignore unknown higher-version fields or request full config.
 
-## Commands (Write)
+## Commands (Write) - Currently Implemented
 
-Simple TLV or fixed small command packets.
+Single-byte commands sent to the command characteristic.
 
-Examples:
+| Byte | Command          | Description                     |
+|------|------------------|---------------------------------|
+| 0x01 | CYCLE_SKIN       | Switch the on-bike display skin |
+| 0x02 | RESET_TRIP       | Zero the trip distance          |
 
-- `CMD_SET_POWER_MODE` + uint8_t mode
-- `CMD_LIGHTS_TOGGLE` / `CMD_LIGHTS_SET` + mask
-- `CMD_CRUISE_SET` + on/off
-- `CMD_RESET_TRIP`
-- `CMD_BEEP` (for finding the bike)
-
-Define in `firmware/src/protocol.h` and mirror in Dart.
+More commands (power mode, lights, etc.) will be added as features are built.
 
 ## Config Sync
 
@@ -113,12 +100,8 @@ Read/Write a JSON or packed struct containing:
 - Keep MTU high (`BLEDevice::setMTU(185)` or negotiate)
 
 **Flutter**
-```dart
-final subscription = telemetryChar.onValueReceived.listen((value) {
-  final data = parseTelemetry(value);
-  // update UI
-});
-await telemetryChar.setNotifyValue(true);
-```
+See the working implementation:
+- `mobile/lib/services/minibike_ble.dart`
+- `mobile/lib/models/telemetry_packet.dart`
 
-See `firmware/src/` for reference implementation (coming soon).
+It uses `flutter_blue_plus` and subscribes with `setNotifyValue(true)`.

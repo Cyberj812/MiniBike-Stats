@@ -99,19 +99,20 @@ Primary data from VESC `get_values()` / status packets:
 
 BMS values (when available via CAN): total voltage, SOC, individual cell voltages, balancing state, temps.
 
-## Tech Stack (Proposed)
+## Tech Stack (Current)
 
 **Firmware**
-- PlatformIO + Arduino framework (easy) **or** ESP-IDF
-- LVGL for rich UI on the display (gauges, pages, animations)
-- Graphics libs: LovyanGFX or TFT_eSPI / Arduino_GFX
-- BLE: NimBLE-Arduino (recommended, lower resource)
-- VESC comms: SolidGeek/VescUart (UART) or custom CAN + packet parser
+- PlatformIO + Arduino + NimBLE for BLE
+- Real-time telemetry over Bluetooth (~5 Hz notify)
+- VESC comms via UART (easy to switch to CAN)
+- Swappable UI skins (see docs/ui-skins.md)
 
 **Mobile App**
-- Flutter (strongly recommended for beautiful cross-platform UIs + great BLE/charts)
-- Packages: `flutter_blue_plus`, `fl_chart` or `syncfusion_flutter_charts`, `path_provider`, etc.
-- Optional: background location, GPX export, ride database (sqlite or drift)
+- Flutter + `flutter_blue_plus` for real-time BLE communication
+- Exact binary packet matching between ESP32 and Dart
+- Live dashboard that updates as data arrives from the bike
+
+See `mobile/README.md` for running instructions and `docs/protocol.md` for the BLE protocol.
 
 **Other**
 - Protocol: Simple binary struct (versioned) over BLE notify for efficiency, or JSON for quick prototyping.

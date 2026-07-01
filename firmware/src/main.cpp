@@ -43,7 +43,12 @@ uint32_t lastSkinSwitch = 0;
 // === BLE ===
 NimBLEServer* pServer = nullptr;
 NimBLECharacteristic* pTelemetryChar = nullptr;
+NimBLECharacteristic* pCmdChar = nullptr;
 bool deviceConnected = false;
+
+// Real-time telemetry rate
+const uint32_t TELEMETRY_INTERVAL_MS = 200;   // ~5 Hz - good balance for BLE + battery
+uint32_t lastTelemetrySend = 0;
 
 #define SERVICE_UUID        "a1b2c3d4-0000-0000-0000-00000000beef"
 #define TELEMETRY_CHAR_UUID "a1b2c3d4-1001-0000-0000-00000000beef"
@@ -74,20 +79,22 @@ void sendTelemetryBLE() {
   if (!deviceConnected || !pTelemetryChar) return;
 
   TelemetryPacketV1 pkt{};
-  pkt.ts_ms     = millis();
-  pkt.v_in      = telem.v_in;
-  pkt.i_in      = telem.i_in;
-  pkt.i_motor   = telem.i_motor;
-  pkt.duty      = telem.duty;
-  pkt.rpm       = telem.rpm;
-  pkt.temp_mos  = telem.temp_mos;
-  pkt.temp_motor= telem.temp_motor;
-  pkt.fault     = telem.fault;
-  pkt.speed_kmh = telem.speed_kmh;
-  pkt.power_w   = telem.power_w;
-  pkt.soc       = telem.soc;
-  pkt.trip_km   = telem.trip_km;
-  // power_mode etc. later
+  pkt.ts_ms      = millis();
+  pkt.v_in       = telem.v_in;
+  pkt.i_in       = telem.i_in;
+  pkt.i_motor    = telem.i_motor;
+  pkt.duty       = telem.duty;
+  pkt.rpm        = telem.rpm;
+  pkt.temp_mos   = telem.temp_mos;
+  pkt.temp_motor = telem.temp_motor;
+  pkt.fault      = telem.fault;
+  pkt.speed_kmh  = telem.speed_kmh;
+  pkt.power_w    = telem.power_w;
+  pkt.soc        = telem.soc;
+  pkt.trip_km    = telem.trip_km;
+  pkt.power_mode = 0; // TODO: wire from actual state
+  pkt.lights     = 0;
+  pkt.cruise     = 0;
 
   pTelemetryChar->setValue((uint8_t*)&pkt, sizeof(pkt));
   pTelemetryChar->notify();
@@ -98,6 +105,9 @@ class ServerCallbacks : public NimBLEServerCallbacks {
   void onConnect(NimBLEServer* pServer, ble_gap_conn_desc* desc) override {
     deviceConnected = true;
     Serial.println("BLE client connected");
+
+    // Try to use a larger MTU for faster/more efficient telemetry packets
+    pServer->updatePeerMTU(desc->conn_handle, 185);
   }
   void onDisconnect(NimBLEServer* pServer, ble_gap_conn_desc* desc) override {
     deviceConnected = false;
@@ -218,7 +228,7 @@ void setup() {
       NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
   );
 
-  NimBLECharacteristic* pCmdChar = pService->createCharacteristic(
+  pCmdChar = pService->createCharacteristic(
       COMMAND_CHAR_UUID,
       NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR
   );
@@ -245,8 +255,14 @@ void setup() {
 void loop() {
   updateTelemetryFromVesc();
   updateLocalDisplay();
-  sendTelemetryBLE();
 
-  // Light CPU
-  delay(50);   // ~20 Hz loop. Adjust as needed.
+  // Send telemetry at controlled rate for smooth real-time experience
+  uint32_t now = millis();
+  if (now - lastTelemetrySend >= TELEMETRY_INTERVAL_MS) {
+    sendTelemetryBLE();
+    lastTelemetrySend = now;
+  }
+
+  // Small delay keeps CPU usage reasonable
+  delay(20);
 }
