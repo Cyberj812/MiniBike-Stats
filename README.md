@@ -1,6 +1,8 @@
 # MiniBike Stats
 
 [![GitHub](https://img.shields.io/badge/GitHub-Cyberj812%2FMiniBike--Stats-blue?logo=github)](https://github.com/Cyberj812/MiniBike-Stats)
+[![Firmware CI](https://github.com/Cyberj812/MiniBike-Stats/actions/workflows/firmware-ci.yml/badge.svg)](https://github.com/Cyberj812/MiniBike-Stats/actions/workflows/firmware-ci.yml)
+[![Mobile (Flutter) CI](https://github.com/Cyberj812/MiniBike-Stats/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/Cyberj812/MiniBike-Stats/actions/workflows/flutter-ci.yml)
 
 Open-source telemetry system for an electric minibike using ESP32 + custom display, with a companion mobile app.
 
@@ -30,13 +32,22 @@ This project aims for similar (or better) visibility on your custom screen **plu
 
 ```mermaid
 flowchart TD
-    VESC[VESC Motor Controller] <-->|UART or CAN| ESP32[ESP32]
-    BMS[BMS / other CAN nodes] <-->|CAN| ESP32
-    ESP32 -->|SPI / RGB / etc.| Display[Custom TFT / LCD / Touch Screen]
-    ESP32 -->|BLE (primary)<br/>or Wi-Fi| Phone[Mobile App]
-    ESP32 -->|Optional| SD[SD Card Logging]
-    ESP32 -->|GPIO| Lights[Lights, Horn, Buttons]
-    Phone --> Graphs[Charts, History, Export]
+    subgraph Bike
+        VESC["VESC Motor Controller"]
+        ESP32["ESP32"]
+        Display["Custom TFT / LCD / Touch Screen"]
+        SD["SD Card Logging"]
+        Lights["Lights, Horn, Buttons"]
+        BMS["BMS / other CAN nodes"]
+    end
+    Phone["Mobile App"]
+    VESC <-->|UART or CAN| ESP32
+    BMS <-->|CAN| ESP32
+    ESP32 -->|SPI / RGB / etc.| Display
+    ESP32 -->|Optional| SD
+    ESP32 -->|GPIO| Lights
+    ESP32 <-->|BLE or Wi-Fi| Phone
+    Phone -->|Charts, History, Export| Graphs["Graphs"]
 ```
 
 - **ESP32** is the central brain: reads telemetry, drives the screen, serves data over BLE, handles buttons, computes derived values (speed, SOC, efficiency, trip counters).
