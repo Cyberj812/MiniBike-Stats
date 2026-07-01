@@ -1,4 +1,6 @@
-# minibike-esp32-dash
+# MiniBike Stats
+
+[![GitHub](https://img.shields.io/badge/GitHub-Cyberj812%2FMiniBike--Stats-blue?logo=github)](https://github.com/Cyberj812/MiniBike-Stats)
 
 Open-source telemetry system for an electric minibike using ESP32 + custom display, with a companion mobile app.
 
@@ -110,7 +112,7 @@ BMS values (when available via CAN): total voltage, SOC, individual cell voltage
 ## Project Structure
 
 ```
-minibike-esp32-dash/
+MiniBike-Stats/
 ├── README.md
 ├── firmware/               # ESP32 code (PlatformIO recommended)
 │   ├── platformio.ini
