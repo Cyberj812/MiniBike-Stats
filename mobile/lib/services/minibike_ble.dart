@@ -172,7 +172,7 @@ class MiniBikeBle extends ChangeNotifier {
   Future<void> cycleDisplaySkin() async => sendCommand(0x01);
   Future<void> resetTrip() async => sendCommand(0x02);
 
-  Future<void> disconnect() async {
+  Future<void> disconnect({bool shouldNotify = true}) async {
     await _cleanupConnection();
     if (_device != null) {
       try {
@@ -182,7 +182,9 @@ class MiniBikeBle extends ChangeNotifier {
     _device = null;
     isConnected = false;
     statusMessage = "Disconnected";
-    notifyListeners();
+    if (shouldNotify) {
+      notifyListeners();
+    }
   }
 
   Future<void> _cleanupConnection() async {
@@ -200,7 +202,7 @@ class MiniBikeBle extends ChangeNotifier {
 
   @override
   void dispose() {
-    disconnect();
+    disconnect(shouldNotify: false);
     super.dispose();
   }
 }
