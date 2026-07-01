@@ -5,6 +5,10 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+flutter {
+    source = "../.."
+}
+
 android {
     namespace = "com.example.minibike_stats"
     compileSdk = flutter.compileSdkVersion
@@ -37,8 +41,4 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
-}
-
-flutter {
-    source = "../.."
 }
